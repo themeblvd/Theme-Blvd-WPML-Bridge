@@ -3,7 +3,7 @@
 Plugin Name: Theme Blvd WPML Bridge
 Plugin URI: http://wpml.themeblvd.com
 Description: This plugin creates a bridge between the Theme Blvd framework and the WPML plugin.
-Version: 1.0.4
+Version: 1.1.0
 Author: Jason Bobich
 Author URI: http://jasonbobich.com
 License: GPL2
@@ -25,6 +25,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+
+define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '1.1.0' );
+define( 'TB_WPML_BRIDGE_PLUGIN_DIR', dirname( __FILE__ ) );
+define( 'TB_WPML_BRIDGE_PLUGIN_URI', plugins_url( '' , __FILE__ ) );
 
 /*-----------------------------------------------------------------------------------*/
 /* Frontend Integration
@@ -366,6 +370,105 @@ add_action( 'after_setup_theme', 'tb_wpml_actions' );
 /*-----------------------------------------------------------------------------------*/
 
 /**
+ *
+ * @since 1.1.0
+ */
+
+function tb_wpml_bridge_options_page_init() {
+	
+	global $_themeblvd_theme_options_page;
+	
+	// Don't continue if the WPML plugin 
+	// hasn't been installed.
+	if( ! function_exists( 'icl_get_languages' ) )
+		return;
+	
+	// If this is framework v2.2, un-hook default theme options page 
+	// and replace with a modified version.
+	if( is_object( $_themeblvd_theme_options_page ) ) {
+		remove_action( 'admin_menu', array( $_themeblvd_theme_options_page, 'add_page' ) );
+		add_action( 'admin_menu', 'tb_wpml_bridge_add_options_page' );
+	}
+	
+}
+add_action( 'after_setup_theme', 'tb_wpml_bridge_options_page_init', 1001 );
+
+/**
+ * Add options page that replaces default theme options page.
+ * 
+ * NOTE: This only happens if the user is running framework v2.2+.
+ * 
+ * @since 1.1.0
+ */
+
+function tb_wpml_bridge_add_options_page() {
+	global $_themeblvd_theme_options_page;
+	$admin_page = add_submenu_page( 'themes.php', __( 'Theme Options', 'tb_wpml' ), __( 'Theme Options', 'tb_wpml' ), themeblvd_admin_module_cap( 'options' ), themeblvd_get_option_name(), 'optionsframework_page' );
+	add_action( 'admin_print_styles-'.$admin_page, array( $_themeblvd_theme_options_page, 'load_styles' ) );
+	add_action( 'admin_print_scripts-'.$admin_page, array( $_themeblvd_theme_options_page, 'load_scripts' ) );
+	add_action( 'admin_print_styles-'.$admin_page, 'optionsframework_mlu_css', 0 );
+	add_action( 'admin_print_scripts-'.$admin_page, 'optionsframework_mlu_js', 0 );
+}
+
+/**
+ * Display options page that replaces default theme options page.
+ * 
+ * NOTE: This only happens if the user is running framework v2.2+.
+ * 
+ * @since 1.1.0
+ */
+
+function tb_wpml_bridge_options_page() { // Can we delete this for optionsframework_page() ?
+	
+	// Option name
+	$option_name = themeblvd_get_option_name(); // can safely use this function because we know we're in framework v2.2 at this point
+	
+	// Get any current settings from the database.
+	$settings = get_option( $option_name );
+    
+    // Setup options form
+	$return = themeblvd_option_fields( $option_name, $this->options, $settings  );
+
+	// Display any errors or update messages.
+	settings_errors( $option_name );
+	?>
+	<div class="wrap">
+		<div class="admin-module-header">
+			<?php do_action( 'themeblvd_admin_module_header', 'options' ); ?>
+		</div>
+	    <?php screen_icon('themes'); ?>
+	    <h2<?php if( $return[1] ) echo ' class="nav-tab-wrapper"' ?>>
+	        <?php if( $return[1] ) : ?>
+	        	<?php echo $return[1]; ?>
+	        <?php else : ?>
+	        	<?php echo $this->args['page_title']; ?>
+	        <?php endif; ?>
+	    </h2>
+	    <div class="metabox-holder">
+		    <div id="optionsframework">
+				<form id="themeblvd_theme_options" action="options.php" method="post">
+					<?php settings_fields( $option_name ); ?>
+					<?php echo $return[0]; /* Settings */ ?>
+			        <div id="optionsframework-submit">
+						<input type="submit" class="button-primary" name="update" value="<?php esc_attr_e( 'Save Options', 'tb_wpml' ); ?>" />
+						<input type="submit" class="reset-button button-secondary" value="<?php esc_attr_e( 'Restore Defaults', 'tb_wpml' ); ?>" />
+						<input type="submit" class="clear-button button-secondary" value="<?php esc_attr_e( 'Clear Options', 'tb_wpml' ); ?>" />
+			           	<div class="clear"></div>
+					</div>
+				</form>
+				<div class="tb-footer-text">
+					<?php do_action( 'themeblvd_options_footer_text' ); ?>
+				</div><!-- .tb-footer-text (end) -->
+			</div><!-- #optionsframework (end) -->
+			<div class="admin-module-footer">
+				<?php do_action( 'themeblvd_admin_module_footer', 'options' ); ?>
+			</div><!-- .admin-module-footer (end) -->
+		</div><!-- .metabox-holder (end) -->
+	</div><!-- .wrap (end) -->
+	<?php
+}
+
+/**
  * Initiate theme options after the framework has initiated it's default
  * theme options system.
  * 
@@ -409,7 +512,7 @@ function tb_wpml_optionsframework_init() {
 	// Register settings for each language only if its not the default 
 	// language. The default language's options set wil be saved with 
 	// no language code appended, and thus was already registered above.
-	foreach ( $langs as $key => $lang ) {
+	foreach( $langs as $key => $lang ) {
 		if( $key != $default_lang ) {
 			// Register settings
 			register_setting( $option_name.'_'.$key, $option_name.'_'.$key, 'tb_wpml_optionsframework_validate' );
@@ -417,10 +520,19 @@ function tb_wpml_optionsframework_init() {
 	}
 	
 	// Add CSS files to framework's admin pages
-	add_action( 'admin_print_styles-appearance_page_options-framework','tb_wpml_optionsframework_load_styles' );
-	add_action( 'admin_print_styles-appearance_page_sidebar_blvd','tb_wpml_optionsframework_load_styles' );
-	add_action( 'admin_print_styles-toplevel_page_builder_blvd','tb_wpml_optionsframework_load_styles' );
-	add_action( 'admin_print_styles-toplevel_page_slider_blvd','tb_wpml_optionsframework_load_styles' );
+	if( defined( 'TB_FRAMEWORK_VERSION' ) && version_compare( TB_FRAMEWORK_VERSION, '2.2.0', '>=' ) ) {
+		add_action( 'admin_print_styles-appearance_page_'.themeblvd_get_option_name(),'tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-appearance_page_themeblvd_widget_areas','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-toplevel_page_themeblvd_builder','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-toplevel_page_themeblvd_sliders','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-wpml_page_'.tb_wpml_get_admin_page_id(),'tb_wpml_optionsframework_load_styles' );
+	} else {
+		add_action( 'admin_print_styles-appearance_page_options-framework','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-appearance_page_sidebar_blvd','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-toplevel_page_builder_blvd','tb_wpml_optionsframework_load_styles' );
+		add_action( 'admin_print_styles-toplevel_page_slider_blvd','tb_wpml_optionsframework_load_styles' );
+	}
+	
 }
 add_action( 'admin_init', 'tb_wpml_optionsframework_init', 11 ); // Priority 11 to execute AFTER Theme Blvd framework
 
@@ -436,7 +548,7 @@ add_action( 'admin_init', 'tb_wpml_optionsframework_init', 11 ); // Priority 11 
  */
  
 function tb_wpml_optionsframework_load_styles() {
-	wp_register_style( 'tb_wpml_optionsframework_styles', plugins_url( 'assets/css/optionsframework.css', __FILE__ ), false, '1.0' );
+	wp_register_style( 'tb_wpml_optionsframework_styles', TB_WPML_BRIDGE_PLUGIN_URI . '/assets/css/optionsframework.css', false, '1.0' );
 	wp_enqueue_style( 'tb_wpml_optionsframework_styles' );
 }
 
@@ -475,7 +587,7 @@ function tb_wpml_optionsframework_validate( $input ) {
 	// file will be added to the option for the active theme.
 	
 	if ( isset( $_POST['reset'] ) ) {
-		add_settings_error( $option_name.'_'.$_POST['current_lang'], 'restore_defaults', __( 'Default options restored.', TB_GETTEXT_DOMAIN ), 'error fade' );
+		add_settings_error( $option_name.'_'.$_POST['current_lang'], 'restore_defaults', __( 'Default options restored.', 'tb_wpml' ), 'error fade' );
 		return of_get_default_values();
 	}
 	
@@ -487,7 +599,7 @@ function tb_wpml_optionsframework_validate( $input ) {
 	/* There's no button to do this with WPML Bridge
 	 
 	if ( isset( $_POST['clear'] ) ) {
-		add_settings_error( $option_name, 'restore_defaults', __( 'Options cleared from database.', TB_GETTEXT_DOMAIN ), 'error fade' );
+		add_settings_error( $option_name, 'restore_defaults', __( 'Options cleared from database.', 'tb_wpml' ), 'error fade' );
 		return null;
 	}
 	*/
@@ -523,22 +635,24 @@ function tb_wpml_optionsframework_validate( $input ) {
 			continue;
 
 		// Set checkbox to false if it wasn't sent in the $_POST
-		if ( 'checkbox' == $option['type'] && ! isset( $input[$id] ) )
+		if( 'checkbox' == $option['type'] && ! isset( $input[$id] ) )
 			$input[$id] = '0';
 
 		// Set each item in the multicheck to false if it wasn't sent in the $_POST
-		if ( 'multicheck' == $option['type'] && ! isset( $input[$id] ) )
+		if( 'multicheck' == $option['type'] && ! isset( $input[$id] ) )
 			foreach ( $option['options'] as $key => $value )
 				$input[$id][$key] = '0';
 
 		// For a value to be submitted to database it must pass through a sanitization filter
-		if ( has_filter( 'of_sanitize_' . $option['type'] ) )
+		if( has_filter( 'themeblvd_sanitize_' . $option['type'] ) )
+			$clean[$id] = apply_filters( 'themeblvd_sanitize_' . $option['type'], $input[$id], $option );
+		elseif( has_filter( 'of_sanitize_' . $option['type'] ) )
 			$clean[$id] = apply_filters( 'of_sanitize_' . $option['type'], $input[$id], $option );
 			
 	}
 	
 	// Add update message for page re-fresh
-	add_settings_error( $option_name.'_'.$_POST['current_lang'], 'save_options', __( 'Options saved.', TB_GETTEXT_DOMAIN ), 'updated fade' );
+	add_settings_error( $option_name.'_'.$_POST['current_lang'], 'save_options', __( 'Options saved.', 'tb_wpml' ), 'updated fade' );
 	
 	// Return sanitized options
 	return $clean;
@@ -634,7 +748,11 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 		// Get settings and form
 		$settings = get_option($option_name);
 	    $options = themeblvd_get_formatted_options();
-		$return = optionsframework_fields( $option_name, $options, $settings  );
+		if( function_exists( 'themeblvd_option_fields' ) ) // If themeblvd_option_fields exists, we're using framework v2.2+
+			$return = themeblvd_option_fields( $option_name, $options, $settings  );
+		else
+			$return = optionsframework_fields( $option_name, $options, $settings  );
+		
 		settings_errors();
 		?>
 		<div class="wrap">
@@ -686,7 +804,11 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
  */
 
 function tb_wpml_admin_module_header( $page ) {
-	if( $page == 'options' ) {
+	
+	$current_screen = get_current_screen();
+	$possible_admin_pages = array( 'appearance_page_options-framework', 'appearance_page_'.tb_wpml_get_option_name() );
+	
+	if( in_array( $current_screen->base, $possible_admin_pages ) ) {
 		
 		// Don't continue if the WPML plugin 
 		// hasn't been installed.
@@ -713,7 +835,9 @@ function tb_wpml_admin_module_header( $page ) {
 			$current_lang = $_GET['themeblvd_lang'];
 		if( ! in_array( $current_lang, $langs_check ) )
 			$current_lang = $default_lang;
-
+		
+		// Options page ID
+		$options_page = version_compare( TB_FRAMEWORK_VERSION, '2.2.0', '>=' ) ? themeblvd_get_option_name() : 'options-framework';
 		?>
 		<div class="tb-wpml-header">
 			<h3>
@@ -726,7 +850,7 @@ function tb_wpml_admin_module_header( $page ) {
 					<ul>
 						<?php foreach( $langs as $key => $lang ) : ?>
 							<li<?php if($key == $current_lang ) echo ' class="active"'; ?>>
-								<a href="?page=options-framework&themeblvd_lang=<?php echo $key ?>">
+								<a href="?page=<?php echo $options_page; ?>&themeblvd_lang=<?php echo $key ?>">
 									<?php echo $lang['translated_name']; ?>
 								</a>
 							</li>
@@ -761,10 +885,36 @@ add_action( 'themeblvd_admin_module_header', 'tb_wpml_admin_module_header');
  */
 
 function tb_wpml_admin_page_init() {
-	// Register settings
-	add_action( 'admin_init', 'tb_wpml_admin_page_register' );
-	// Add settings page
-	add_action( 'admin_menu', 'tb_wpml_add_admin_page', 999 ); // Always place after WPML's add-ons
+	
+	// Double check Theme Blvd and WPML
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || ! defined( 'ICL_PLUGIN_PATH' ) )
+		return;
+
+	if( class_exists( 'Theme_Blvd_Options_Page' ) ) {
+		
+		global $_tb_wpml_admin;
+		
+		$theme_data = wp_get_theme( get_stylesheet() );
+		$theme_name = $theme_data->get('Name');
+		
+		// Use framework v2.2+ options class and skip using all 
+		// functions below in this section.
+		$args = array(
+			'parent'		=> apply_filters( 'icl_menu_main_page', basename( ICL_PLUGIN_PATH ).'/menu/languages.php' ),
+			'page_title' 	=> $theme_name.' '.__( 'WPML Options', 'tb_wpml' ),
+			'menu_title' 	=> $theme_name,
+			'cap'			=> apply_filters( 'tb_wpml_settings_cap', 'edit_theme_options' ),
+			'icon'			=> 'wpml',
+			'closer'		=> false
+		);
+		$_tb_wpml_admin = new Theme_Blvd_Options_Page( tb_wpml_get_admin_page_id(), tb_wpml_get_options(), $args );
+	
+	} else {
+		// Old way of setting up options page manually
+		add_action( 'admin_init', 'tb_wpml_admin_page_register' );
+		add_action( 'admin_menu', 'tb_wpml_add_admin_page', 999 ); // Always place after WPML's add-ons
+	}
+
 }
 add_action( 'init', 'tb_wpml_admin_page_init' );
 
@@ -801,17 +951,10 @@ function tb_wpml_add_admin_page(){
 		// Get theme name.
 		$theme_name = '';
 		$theme_id = '';
-		if( function_exists( 'wp_get_theme' ) ) {
-			// Use wp_get_theme for WP 3.4+
-			$theme_data = wp_get_theme( get_stylesheet() );
-			$theme_name = $theme_data->get('Name');
-			$theme_id = preg_replace('/\W/', '', strtolower( $theme_name ) );
-		} else {
-			// Deprecated theme data retrieval
-			$theme_data = get_theme_data( get_stylesheet_directory() . '/style.css');
-			$theme_name = $theme_data['Name'];
-			$theme_id = preg_replace('/\W/', '', strtolower( $theme_name ) );
-		}
+		// Use wp_get_theme for WP 3.4+
+		$theme_data = wp_get_theme( get_stylesheet() );
+		$theme_name = $theme_data->get('Name');
+		$theme_id = preg_replace('/\W/', '', strtolower( $theme_name ) );
 		// Make sure vars are set and this is a Theme Blvd theme.
 		if( $theme_name && $theme_id && defined( 'TB_FRAMEWORK_VERSION' ) ) {
 			// Get top level WPML plugin page
@@ -838,7 +981,9 @@ function tb_wpml_get_default_values() {
 	foreach ( $config as $option ) {
 		if ( ! isset( $option['id'] ) || ! isset( $option['std'] ) || ! isset( $option['type'] ) )
 			continue;
-		if ( has_filter( 'of_sanitize_' . $option['type'] ) )
+		if ( has_filter( 'themeblvd_sanitize_' . $option['type'] ) )
+			$values[$option['id']] = apply_filters( 'themeblvd_sanitize_' . $option['type'], $option['std'], $option );
+		elseif ( has_filter( 'of_sanitize_' . $option['type'] ) )
 			$values[$option['id']] = apply_filters( 'of_sanitize_' . $option['type'], $option['std'], $option );
 	}
 	return $values;
@@ -879,7 +1024,9 @@ function tb_wpml_validate( $input ) {
 				}
 			}
 			// For a value to be submitted to database it must pass through a sanitization filter
-			if ( has_filter( 'of_sanitize_' . $option['type'] ) ) {
+			if( has_filter( 'themeblvd_sanitize_' . $option['type'] ) ) {
+				$clean[$id] = apply_filters( 'themeblvd_sanitize_' . $option['type'], $input[$id], $option );
+			} elseif( has_filter( 'of_sanitize_' . $option['type'] ) ) {
 				$clean[$id] = apply_filters( 'of_sanitize_' . $option['type'], $input[$id], $option );
 			}
 		}
@@ -913,20 +1060,20 @@ function tb_wpml_get_admin_page_id() {
  */
  
 function tb_wpml_display_admin_page() {
-	$optionsframework_settings = get_option('optionsframework');
-		// Setup options
-		$option_name = tb_wpml_get_admin_page_id();
-		$settings = get_option( $option_name );
-	    $options = tb_wpml_get_options();
-		$return = optionsframework_fields( $option_name, $options, $settings  );
-		settings_errors();
-		?>
-		<div class="wrap">
-		    <?php screen_icon( 'themes' ); ?>
-		    <h2 class="nav-tab-wrapper">
-		        <?php echo $return[1]; ?>
-		    </h2>
-		    <div class="metabox-holder">
+	// Use wp_get_theme for WP 3.4+
+	$theme_data = wp_get_theme( get_stylesheet() );
+	$theme_name = $theme_data->get('Name');
+	// Setup options
+	$option_name = tb_wpml_get_admin_page_id();
+	$settings = get_option( $option_name );
+    $options = tb_wpml_get_options();
+	$return = optionsframework_fields( $option_name, $options, $settings, false );
+	settings_errors();
+	?>
+	<div class="wrap">
+	    <?php screen_icon( 'wpml' ); ?>
+	    <h2><?php echo $theme_name.' '.__( 'WPML Options', 'tb_wpml' ); ?></h2>
+	    <div class="metabox-holder">
 		    <div id="optionsframework">
 				<form action="options.php" method="post">
 					<?php settings_fields( 'optionsframework_tb_wpml' ); ?>
@@ -940,10 +1087,10 @@ function tb_wpml_display_admin_page() {
 				<div class="tb-footer-text">
 					<?php do_action( 'themeblvd_options_footer_text' ); ?>
 				</div><!-- .tb-footer-text (end) -->
-			</div> <!-- #container (end) -->
-			<div class="admin-module-footer">
-				<?php do_action( 'themeblvd_admin_module_footer', 'options' ); ?>
-			</div>
+			</div><!-- #optionsframework (end) -->
+		</div><!-- .metabox-holder (end) -->
+		<div class="admin-module-footer">
+			<?php do_action( 'themeblvd_admin_module_footer', 'options' ); ?>
 		</div>
 	</div><!-- .wrap (end) -->
 	<?php	
@@ -981,10 +1128,12 @@ function tb_wpml_get_options() {
 	
 	// Start options and location section
 	$options = array(
+		/*
 		'start_display_tab' => array(
 			'name' => __( 'Display', 'tb_wpml' ),
 			'type' => 'heading'
 		),
+		*/
 		'start_locations' => array( 
 			'name' => __( 'Theme Locations', 'tb_wpml' ),		
 			'type' => 'section_start',
