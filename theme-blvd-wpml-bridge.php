@@ -3,7 +3,7 @@
 Plugin Name: Theme Blvd WPML Bridge
 Plugin URI: http://wpml.themeblvd.com
 Description: This plugin creates a bridge between the Theme Blvd framework and the WPML plugin.
-Version: 1.1.0
+Version: 1.1.1
 Author: Jason Bobich
 Author URI: http://jasonbobich.com
 License: GPL2
@@ -370,7 +370,8 @@ add_action( 'after_setup_theme', 'tb_wpml_actions' );
 /*-----------------------------------------------------------------------------------*/
 
 /**
- *
+ * Add in options page to WP admin.
+ * 
  * @since 1.1.0
  */
 
@@ -492,16 +493,19 @@ function tb_wpml_bridge_options_page() { // Can we delete this for optionsframew
 
 function tb_wpml_optionsframework_init() {
 	
+	global $sitepress;
+
 	// Don't continue if the WPML plugin 
 	// hasn't been installed.
-	if( ! function_exists( 'icl_get_languages' ) )
+	if( ! is_object( $sitepress ) )
 		return;
 	
 	// Global option name
 	$option_name = tb_wpml_get_option_name();
 	
 	// Get all languages
-	$langs = icl_get_languages();
+	// $langs = icl_get_languages(); // Preferred way, but no longer works in wp-admin with WPML v2.6.3
+	$langs = $sitepress->get_active_languages();
 	
 	// Set default language
 	$default_lang = 'en'; // backup
@@ -702,10 +706,11 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 	function optionsframework_page() {
 		
 		global $_GET;
+		global $sitepress;
 		
 		// Don't continue if the WPML plugin 
 		// hasn't been installed.
-		if( ! function_exists( 'icl_get_languages' ) ) {
+		if( ! is_object( $sitepress ) ) {
 			echo '<div class="tb-wpml-warning">';
 			echo '<p><strong>'.__( 'WARNING: You\'ve activated the Theme Blvd WPML Bridge plugin, but you haven\'t installed the official WPML plugin. You\'ll need that plugin installed in order to move forward.', 'tb_wpml' ).'</strong></p>';
 			echo '<p><a href="http://wpml.org/?aid=8007&affiliate_key=MNKoTksdyWns" target="_blank">'.__('Download WPML Plugin', 'tb_wpml' ).'</p></a>';
@@ -714,8 +719,9 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 		}
 	
 		// Get all languages
-		$langs = icl_get_languages();
-	
+		// $langs = icl_get_languages(); // Preferred way, but no longer works in wp-admin with WPML v2.6.3
+		$langs = $sitepress->get_active_languages();
+		
 		// Setup check array
 		$langs_check = array();
 		foreach( $langs as $key => $lang )
@@ -805,6 +811,8 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 
 function tb_wpml_admin_module_header( $page ) {
 	
+	global $sitepress;
+	
 	$current_screen = get_current_screen();
 	$possible_admin_pages = array( 'appearance_page_options-framework', 'appearance_page_'.tb_wpml_get_option_name() );
 	
@@ -812,11 +820,12 @@ function tb_wpml_admin_module_header( $page ) {
 		
 		// Don't continue if the WPML plugin 
 		// hasn't been installed.
-		if( ! function_exists( 'icl_get_languages' ) )
+		if( ! is_object( $sitepress ) )
 			return;
 		
 		// Get all languages
-		$langs = icl_get_languages();
+		// $langs = icl_get_languages(); // Preferred way, but no longer works in wp-admin with WPML v2.6.3
+		$langs = $sitepress->get_active_languages();
 	
 		// Setup check array
 		$langs_check = array();
@@ -838,10 +847,19 @@ function tb_wpml_admin_module_header( $page ) {
 		
 		// Options page ID
 		$options_page = version_compare( TB_FRAMEWORK_VERSION, '2.2.0', '>=' ) ? themeblvd_get_option_name() : 'options-framework';
+		
+		// Current Flag
+		$current_flag = $sitepress->get_flag( $current_lang );
+        if( $current_flag->from_template ){
+            $wp_upload_dir = wp_upload_dir();
+            $current_flag_url = $wp_upload_dir['baseurl'].'/flags/'.$current_flag->flag;
+        } else {
+            $current_flag_url = ICL_PLUGIN_URL.'/res/flags/'.$current_flag->flag;
+        }
 		?>
 		<div class="tb-wpml-header">
 			<h3>
-				<span class="tb-wpml-flag"><img src="<?php echo $langs[$current_lang]['country_flag_url']; ?>" /></span>
+				<span class="tb-wpml-flag"><img src="<?php echo $current_flag_url; ?>" /></span>
 				<?php printf( __( '%1$s Theme Options', 'tb_wpml' ), $langs[$current_lang]['translated_name'] ); ?>
 			</h3>
 			<span class="tb-wpml-logo">Theme Blvd WPML Bridge</span>
@@ -849,9 +867,9 @@ function tb_wpml_admin_module_header( $page ) {
 				<?php if( $langs ) : ?>
 					<ul>
 						<?php foreach( $langs as $key => $lang ) : ?>
-							<li<?php if($key == $current_lang ) echo ' class="active"'; ?>>
+							<li<?php if( $key == $current_lang ) echo ' class="active"'; ?>>
 								<a href="?page=<?php echo $options_page; ?>&themeblvd_lang=<?php echo $key ?>">
-									<?php echo $lang['translated_name']; ?>
+									<?php echo $lang['display_name']; ?>
 								</a>
 							</li>
 						<?php endforeach; ?>
