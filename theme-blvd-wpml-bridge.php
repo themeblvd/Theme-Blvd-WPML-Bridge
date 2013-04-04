@@ -3,7 +3,7 @@
 Plugin Name: Theme Blvd WPML Bridge
 Plugin URI: http://wpml.themeblvd.com
 Description: This plugin creates a bridge between the Theme Blvd framework and the WPML plugin.
-Version: 1.1.1
+Version: 1.1.2
 Author: Jason Bobich
 Author URI: http://jasonbobich.com
 License: GPL2
@@ -26,7 +26,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '1.1.0' );
+define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '1.1.2' );
 define( 'TB_WPML_BRIDGE_PLUGIN_DIR', dirname( __FILE__ ) );
 define( 'TB_WPML_BRIDGE_PLUGIN_URI', plugins_url( '' , __FILE__ ) );
 
@@ -169,6 +169,7 @@ function tb_wpml_homepage_layout( $config ){
 	if( is_home() ) {
 		
 		$builder = false;
+		$layout_post_id = '';
 		$sidebar_layout = '';
 		$featured = '';
 		$featured_below = '';
@@ -195,16 +196,24 @@ function tb_wpml_homepage_layout( $config ){
 		}
 		
 		// Adjust featured area if needed
-		if( $builder ) {
-			$layout_post_id = themeblvd_post_id_by_name( $builder, 'tb_layout' );
+		if( $builder && $layout_post_id ) {
+
+			// Adjust featured areas if needed
 			$elements = get_post_meta( $layout_post_id, 'elements', true );
+			
 			$featured = themeblvd_featured_builder_classes( $elements, 'featured' );
-			$featured_below = themeblvd_featured_builder_classes( $elements, 'featured_below' );	
-		}
-		
-		// Modify builder for global config if needed
-		if( $builder )
+			if( $featured )
+				$config['featured'] = $featured;
+			
+			$featured_below = themeblvd_featured_builder_classes( $elements, 'featured_below' );
+			if( $featured_below )
+				$config['featured_below'] = $featured_below;
+
+			// Modify builder for global config	
 			$config['builder'] = $builder;
+			$config['builder_post_id'] = $layout_post_id;
+
+		}
 		
 		// Modify sidebar layout for global config if needed
 		if( $sidebar_layout ) {
@@ -217,14 +226,6 @@ function tb_wpml_homepage_layout( $config ){
 			$config['sidebar_layout'] = $sidebar_layout;
 			
 		}
-		
-		// Modify fearured area for global config if needed
-		if( $featured )
-			$config['featured'] = $featured;
-			
-		// Modify fearured below area for global config if needed
-		if( $featured_below )
-			$config['featured_below'] = $featured_below;
 	
 	}
 	return $config;
