@@ -293,6 +293,44 @@ add_action( 'themeblvd_wpml_nav', 'tb_wpml_flaglist' );
 
 if( ! function_exists( 'tb_wpml_breadcrumbs' ) ) {
 	function tb_wpml_breadcrumbs() {
+		if( themeblvd_show_breadcrumbs() ){
+			?>
+			<div id="breadcrumbs">
+				<div class="breadcrumbs-inner">
+					<div class="breadcrumbs-content">
+						<div class="breadcrumb">
+							<?php do_action( 'tb_wpml_breadcrumbs_before' ); ?>
+							<?php do_action( 'icl_navigation_breadcrumb' ); // Display WPML breadcrumbs ?>
+							<?php do_action( 'tb_wpml_breadcrumbs_after' ); ?>
+						</div><!-- .breadcrumb (end) -->
+					</div><!-- .breadcrumbs-content (end) -->
+				</div><!-- .breadcrumbs-inner (end) -->
+			</div><!-- #breadcrumbs (end) -->
+			<?php
+		}
+	}
+}
+
+/**
+ * New display for action: themeblvd_breadcrumbs
+ *
+ * This function is a copy of the old tb_wpml_breadcrumbs 
+ * function. It only gets added with Theme Blvd themes 
+ * prior to framework v2.2. -- See tb_wpml_actions()
+ * 
+ * @since 1.1.3
+ * @deprecated
+ */
+
+if( ! function_exists( 'tb_wpml_breadcrumbs_legacy' ) ) {
+	function tb_wpml_breadcrumbs_legacy() {
+		
+		// Fix for conflict with page.php and WPML 
+		// CMS Nav v1.3 in older themes prior to TB 
+		// framework v2.2
+		if( is_page() )
+			rewind_posts();
+
 		wp_reset_query();
 		global $post;
 		$display = '';
@@ -343,7 +381,10 @@ function tb_wpml_actions(){
 	// Only swap breadcrumbs if user has "WPML CMS Nav" add-on installed.
 	if( class_exists( 'WPML_CMS_Navigation' ) ) {
 		remove_action( 'themeblvd_breadcrumbs', 'themeblvd_breadcrumbs_default' );
-		add_action( 'themeblvd_breadcrumbs', 'tb_wpml_breadcrumbs' );
+		if( function_exists('themeblvd_show_breadcrumbs') )
+			add_action( 'themeblvd_breadcrumbs', 'tb_wpml_breadcrumbs' );
+		else
+			add_action( 'themeblvd_breadcrumbs', 'tb_wpml_breadcrumbs_legacy' );
 	}
 	// Theme Locations
 	$locations = tb_wpml_get_theme_locations();
