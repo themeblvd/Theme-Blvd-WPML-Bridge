@@ -462,7 +462,7 @@ function tb_wpml_bridge_add_options_page() {
  */
 
 function tb_wpml_bridge_options_page() { // Can we delete this for optionsframework_page() ?
-	
+
 	// Option name
 	$option_name = themeblvd_get_option_name(); // can safely use this function because we know we're in framework v2.2 at this point
 	
@@ -813,7 +813,7 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 			        <?php echo $return[1]; ?>
 			    </h2>
 				<div class="metabox-holder">
-				    <div id="optionsframework">
+				    <div id="optionsframework" class="tb-options-js">
 						<input type="hidden" value="<?php echo $option_base; ?>" name="option_page_base">
 						<input type="hidden" value="<?php echo $current_lang; ?>" name="current_lang">
 						<?php settings_fields($option_name); ?>

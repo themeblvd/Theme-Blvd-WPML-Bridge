@@ -45,6 +45,7 @@ The following articles cover general topics and best practices in using WPML spe
 
 * Fixed conflicts with Theme Blvd Framework 2.0-2.1 and WPML CMS Nav 1.3.
 * Added better support for breadcrumbs in Theme Blvd Framework v2.2+.
+* Fixed javascript issues on Theme Options page with Theme Blvd Framework v2.2.1+.
 
 = 1.1.2 =
 
