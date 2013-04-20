@@ -3,7 +3,7 @@
 Plugin Name: Theme Blvd WPML Bridge
 Plugin URI: http://wpml.themeblvd.com
 Description: This plugin creates a bridge between the Theme Blvd framework and the WPML plugin.
-Version: 1.1.2
+Version: 1.1.3
 Author: Jason Bobich
 Author URI: http://jasonbobich.com
 License: GPL2
@@ -26,7 +26,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '1.1.2' );
+define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '1.1.3' );
 define( 'TB_WPML_BRIDGE_PLUGIN_DIR', dirname( __FILE__ ) );
 define( 'TB_WPML_BRIDGE_PLUGIN_URI', plugins_url( '' , __FILE__ ) );
 
