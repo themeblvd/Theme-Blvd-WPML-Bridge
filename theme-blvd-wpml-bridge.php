@@ -430,7 +430,8 @@ class Theme_Blvd_WPML {
 	/*--------------------------------------------*/
 
 	/**
-	 * Is this the theme options page?
+	 * Set options ID for the WPML settings page. 
+	 * (NOT theme options)
 	 *
 	 * @since 2.0.0
 	 */
