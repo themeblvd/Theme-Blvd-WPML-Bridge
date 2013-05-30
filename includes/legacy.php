@@ -1,4 +1,9 @@
 <?php
+/**
+ * Everything in this file is triggered when using a framework 
+ * version prior to 2.3.
+ */
+
 /*-----------------------------------------------------------------------------------*/
 /* Frontend Integration
 /*
@@ -7,6 +12,40 @@
 /* of the website. The items in this section are only relevant when the theme
 /* loads on the frontend.
 /*-----------------------------------------------------------------------------------*/
+
+/**
+ * Initialize frontend for framework versions prior to 2.3
+ *  
+ * @since 2.0.0
+ *
+ * @return string $option_name ID to use with get_option to retrieve theme's options
+ */
+
+function tb_wpml_frontent_init_legacy() {
+	
+	// Prior to Theme Blvd framework v2.3 only.
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '>=' ) )
+		return;
+
+	// Setup global theme settings to use current language.
+	//
+	// NOTE: Run after framework's function with priority 5, 
+	// although in TB v2.1-2.2 frontent init has been hooked 
+	// to wp, just before template_redirect
+	add_action( 'template_redirect', 'tb_wpml_options', 6 );
+	
+	// Setup actions for theme locations. 
+	// 
+	// This appends a flag list to any locations provided by 
+	// current theme and set to do so from:
+	// WP Admin > WPML > {Theme Name}
+	tb_wpml_actions();
+
+	// Homepage custom layout swap
+ 	add_filter( 'themeblvd_frontend_config', 'tb_wpml_homepage_layout', 5 );
+
+}
+add_action( 'after_setup_theme', 'tb_wpml_frontent_init_legacy' );
 
 /**
  * Get global theme options ID. 
@@ -119,7 +158,6 @@ function tb_wpml_options() {
 		$_themeblvd_theme_settings = $new_options;
 	
 }
-add_action( 'template_redirect', 'tb_wpml_options', 6 ); // Run after framework's function with priority 5, although in TB v2.1+ frontent init has been hooked to wp, just before template_redirect
 
 /**
  * Configure homepage layout.
@@ -199,86 +237,6 @@ function tb_wpml_homepage_layout( $config ){
 	}
 	return $config;
 }
-add_filter( 'themeblvd_frontend_config', 'tb_wpml_homepage_layout', 5 );
-
-/**
- * Get flag list.
- *
- * This function returns a simple list of flags for all 
- * available languages for the current page.
- *
- * @since 1.0.0
- */
-
-function tb_wpml_get_flaglist() {
-	// Get languages
-	$langs = icl_get_languages();
-	// Start output
-	$output = '';
-	if( $langs ) {
-		$output .= '<div class="tb-wpml-flaglist">';
-		$output .= '<div class="tb-wpml-flaglist-inner">';
-		$output .= '<ul>';
-		foreach( $langs as $lang ) {
-			$classes = $lang['language_code'];
-			if( $lang['active'] ) $classes .= ' active';
-			$output .= '<li class="'.$classes.'">';
-			$output .= '<a href="'.$lang['url'].'" title="'.$lang['translated_name'].'">';
-			$output .= '<img src="'.$lang['country_flag_url'].'" alt="'.$lang['translated_name'].'" />';
-			$output .= '</a>';
-			$output .= '</li>';
-		}
-		$output .= '</ul>';
-		$output .= '</div><!-- .tb-wpml-flaglist-inner (end) -->';
-		$output .= '</div><!-- .tb-wpml-flaglist (end) -->';
-	}
-	return apply_filters( 'tb_wpml_flaglist', $output );
-}
-
-/**
- * Display flag list.
- *
- * Any compatible theme to automatically show the flaglist 
- * will have do_action('themeblvd_wpml_nav') somewhere in
- * the theme.
- *
- * This can also be removed from automatically showing easily
- * from a Child theme with:
- * remove remove_action('themeblvd_wpml_nav', 'tb_wpml_flaglist' );
- *
- * @since 1.0.0
- */
-
-function tb_wpml_flaglist() {
-	echo tb_wpml_get_flaglist();
-}
-add_action( 'themeblvd_wpml_nav', 'tb_wpml_flaglist' );
-
-/**
- * New display for action: themeblvd_breadcrumbs
- *
- * @since 1.0.0
- */
-
-if( ! function_exists( 'tb_wpml_breadcrumbs' ) ) {
-	function tb_wpml_breadcrumbs() {
-		if( themeblvd_show_breadcrumbs() ){
-			?>
-			<div id="breadcrumbs">
-				<div class="breadcrumbs-inner">
-					<div class="breadcrumbs-content">
-						<div class="breadcrumb">
-							<?php do_action( 'tb_wpml_breadcrumbs_before' ); ?>
-							<?php do_action( 'icl_navigation_breadcrumb' ); // Display WPML breadcrumbs ?>
-							<?php do_action( 'tb_wpml_breadcrumbs_after' ); ?>
-						</div><!-- .breadcrumb (end) -->
-					</div><!-- .breadcrumbs-content (end) -->
-				</div><!-- .breadcrumbs-inner (end) -->
-			</div><!-- #breadcrumbs (end) -->
-			<?php
-		}
-	}
-}
 
 /**
  * New display for action: themeblvd_breadcrumbs
@@ -291,48 +249,46 @@ if( ! function_exists( 'tb_wpml_breadcrumbs' ) ) {
  * @deprecated
  */
 
-if( ! function_exists( 'tb_wpml_breadcrumbs_legacy' ) ) {
-	function tb_wpml_breadcrumbs_legacy() {
-		
-		// Fix for conflict with page.php and WPML 
-		// CMS Nav v1.3 in older themes prior to TB 
-		// framework v2.2
-		if( is_page() )
-			rewind_posts();
+function tb_wpml_breadcrumbs_legacy() {
+	
+	// Fix for conflict with page.php and WPML 
+	// CMS Nav v1.3 in older themes prior to TB 
+	// framework v2.2
+	if( is_page() )
+		rewind_posts();
 
-		wp_reset_query();
-		global $post;
-		$display = '';
-		// Pages and Posts
-		if( is_page() || is_single() )
-			$display = get_post_meta( $post->ID, '_tb_breadcrumbs', true );
-		// Standard site-wide option
-		if( ! $display || $display == 'default' )
-			$display = themeblvd_get_option( 'breadcrumbs', null, 'show' );
-		// Disable on posts homepage
-		if( is_home() )
-			$display = 'hide';
-		// Show breadcrumbs if not hidden
-		if( $display == 'show' ) {
-			$atts = array(
-				//'delimiter' => '&raquo;', // Not using because plugin allows you to set it.
-				'home' => themeblvd_get_local('home'),
-				'home_link' => home_url(),
-				'before' => '<span class="current">',
-				'after' => '</span>'
-			);
-			$atts = apply_filters( 'themeblvd_breadcrumb_atts', $atts );	
-			// Start output
-			echo '<div id="breadcrumbs">';
-			echo '<div class="breadcrumbs-inner tb-wpml-breadcrumbs">';
-			echo '<div class="breadcrumbs-content">';
-			do_action( 'icl_navigation_breadcrumb' ); // Display WPML breadcrumbs
-			echo '</div><!-- .breadcrumbs-content (end) -->';
-			do_action( 'tb_wpml_breadcrumbs_addon' );
-			echo '<div class="clear"></div>';
-			echo '</div><!-- .breadcrumbs-inner (end) -->';
-			echo '</div><!-- #breadcrumbs (end) -->';
-		}
+	wp_reset_query();
+	global $post;
+	$display = '';
+	// Pages and Posts
+	if( is_page() || is_single() )
+		$display = get_post_meta( $post->ID, '_tb_breadcrumbs', true );
+	// Standard site-wide option
+	if( ! $display || $display == 'default' )
+		$display = themeblvd_get_option( 'breadcrumbs', null, 'show' );
+	// Disable on posts homepage
+	if( is_home() )
+		$display = 'hide';
+	// Show breadcrumbs if not hidden
+	if( $display == 'show' ) {
+		$atts = array(
+			//'delimiter' => '&raquo;', // Not using because plugin allows you to set it.
+			'home' => themeblvd_get_local('home'),
+			'home_link' => home_url(),
+			'before' => '<span class="current">',
+			'after' => '</span>'
+		);
+		$atts = apply_filters( 'themeblvd_breadcrumb_atts', $atts );	
+		// Start output
+		echo '<div id="breadcrumbs">';
+		echo '<div class="breadcrumbs-inner tb-wpml-breadcrumbs">';
+		echo '<div class="breadcrumbs-content">';
+		do_action( 'icl_navigation_breadcrumb' ); // Display WPML breadcrumbs
+		echo '</div><!-- .breadcrumbs-content (end) -->';
+		do_action( 'tb_wpml_breadcrumbs_addon' );
+		echo '<div class="clear"></div>';
+		echo '</div><!-- .breadcrumbs-inner (end) -->';
+		echo '</div><!-- #breadcrumbs (end) -->';
 	}
 }
 
@@ -347,6 +303,7 @@ if( ! function_exists( 'tb_wpml_breadcrumbs_legacy' ) ) {
  */
 
 function tb_wpml_actions(){
+	
 	// Only swap breadcrumbs if user has "WPML CMS Nav" add-on installed.
 	if( class_exists( 'WPML_CMS_Navigation' ) ) {
 		remove_action( 'themeblvd_breadcrumbs', 'themeblvd_breadcrumbs_default' );
@@ -355,6 +312,7 @@ function tb_wpml_actions(){
 		else
 			add_action( 'themeblvd_breadcrumbs', 'tb_wpml_breadcrumbs_legacy' );
 	}
+	
 	// Theme Locations
 	$locations = tb_wpml_get_theme_locations();
 	$options_name = tb_wpml_get_admin_page_id();
@@ -369,7 +327,6 @@ function tb_wpml_actions(){
 		}
 	}
 }
-add_action( 'after_setup_theme', 'tb_wpml_actions' );
 
 /*-----------------------------------------------------------------------------------*/
 /* Theme Options (Admin)
@@ -388,6 +345,10 @@ add_action( 'after_setup_theme', 'tb_wpml_actions' );
 
 function tb_wpml_bridge_options_page_init() {
 	
+	// Theme Blvd Framework v2-2.2 only.
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '>=' ) )
+		return;
+
 	global $_themeblvd_theme_options_page;
 	
 	// Don't continue if the WPML plugin 
@@ -423,64 +384,6 @@ function tb_wpml_bridge_add_options_page() {
 }
 
 /**
- * Display options page that replaces default theme options page.
- * 
- * NOTE: This only happens if the user is running framework v2.2+.
- * 
- * @since 1.1.0
- */
-
-function tb_wpml_bridge_options_page() { // Can we delete this for optionsframework_page() ?
-
-	// Option name
-	$option_name = themeblvd_get_option_name(); // can safely use this function because we know we're in framework v2.2 at this point
-	
-	// Get any current settings from the database.
-	$settings = get_option( $option_name );
-    
-    // Setup options form
-	$return = themeblvd_option_fields( $option_name, $this->options, $settings  );
-
-	// Display any errors or update messages.
-	settings_errors( $option_name );
-	?>
-	<div class="wrap">
-		<div class="admin-module-header">
-			<?php do_action( 'themeblvd_admin_module_header', 'options' ); ?>
-		</div>
-	    <?php screen_icon('themes'); ?>
-	    <h2<?php if( $return[1] ) echo ' class="nav-tab-wrapper"' ?>>
-	        <?php if( $return[1] ) : ?>
-	        	<?php echo $return[1]; ?>
-	        <?php else : ?>
-	        	<?php echo $this->args['page_title']; ?>
-	        <?php endif; ?>
-	    </h2>
-	    <div class="metabox-holder">
-		    <div id="optionsframework">
-				<form id="themeblvd_theme_options" action="options.php" method="post">
-					<?php settings_fields( $option_name ); ?>
-					<?php echo $return[0]; /* Settings */ ?>
-			        <div id="optionsframework-submit">
-						<input type="submit" class="button-primary" name="update" value="<?php esc_attr_e( 'Save Options', 'tb_wpml' ); ?>" />
-						<input type="submit" class="reset-button button-secondary" value="<?php esc_attr_e( 'Restore Defaults', 'tb_wpml' ); ?>" />
-						<input type="submit" class="clear-button button-secondary" value="<?php esc_attr_e( 'Clear Options', 'tb_wpml' ); ?>" />
-			           	<div class="clear"></div>
-					</div>
-				</form>
-				<div class="tb-footer-text">
-					<?php do_action( 'themeblvd_options_footer_text' ); ?>
-				</div><!-- .tb-footer-text (end) -->
-			</div><!-- #optionsframework (end) -->
-			<div class="admin-module-footer">
-				<?php do_action( 'themeblvd_admin_module_footer', 'options' ); ?>
-			</div><!-- .admin-module-footer (end) -->
-		</div><!-- .metabox-holder (end) -->
-	</div><!-- .wrap (end) -->
-	<?php
-}
-
-/**
  * Initiate theme options after the framework has initiated it's default
  * theme options system.
  * 
@@ -504,6 +407,10 @@ function tb_wpml_bridge_options_page() { // Can we delete this for optionsframew
 
 function tb_wpml_optionsframework_init() {
 	
+	// Theme Blvd Framework v2-2.2 only.
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '>=' ) )
+		return;
+
 	global $sitepress;
 
 	// Don't continue if the WPML plugin 
@@ -563,7 +470,7 @@ add_action( 'admin_init', 'tb_wpml_optionsframework_init', 11 ); // Priority 11 
  */
  
 function tb_wpml_optionsframework_load_styles() {
-	wp_register_style( 'tb_wpml_optionsframework_styles', TB_WPML_BRIDGE_PLUGIN_URI . '/assets/css/optionsframework.css', false, '1.0' );
+	wp_register_style( 'tb_wpml_optionsframework_styles', TB_WPML_BRIDGE_PLUGIN_URI . '/assets/css/options.css', false, '1.0' );
 	wp_enqueue_style( 'tb_wpml_optionsframework_styles' );
 }
 
@@ -822,6 +729,10 @@ if( ! function_exists( 'optionsframework_page' ) ) { // This check is only neede
 
 function tb_wpml_admin_module_header( $page ) {
 	
+	// Theme Blvd Framework v2-2.2 only.
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '>=' ) )
+		return;
+
 	global $sitepress;
 	
 	$current_screen = get_current_screen();
@@ -915,8 +826,12 @@ add_action( 'themeblvd_admin_module_header', 'tb_wpml_admin_module_header');
 
 function tb_wpml_admin_page_init() {
 	
-	// Double check Theme Blvd and WPML
-	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || ! defined( 'ICL_PLUGIN_PATH' ) )
+	// Theme Blvd Framework v2-2.2 only.
+	if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '>=' ) )
+		return;
+
+	// Double check for WPML
+	if( ! defined( 'ICL_PLUGIN_PATH' ) )
 		return;
 
 	if( class_exists( 'Theme_Blvd_Options_Page' ) ) {
