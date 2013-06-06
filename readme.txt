@@ -1,7 +1,7 @@
 === Theme Blvd WPML Bridge ===
 Contributors: themeblvd
 Tags: themeblvd, wpml, multilingual, localization, language
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 
 This plugin adds additional WPML compatibility for Theme Blvd themes. 
 
@@ -40,6 +40,10 @@ The following articles cover general topics and best practices in using WPML spe
 2. WPML > {Theme Name}
 
 == Changelog ==
+
+= 2.0.1 =
+
+* Filtering of framework options ID adjusted to allow prior filtering before WPML Bridge.
 
 = 2.0.0 =
 
