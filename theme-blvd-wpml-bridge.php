@@ -127,7 +127,7 @@ class Theme_Blvd_WPML {
 			return;
 
 		// General Filters
-		add_filter( 'themeblvd_option_id', array( $this, 'option_id' ) );
+		add_filter( 'themeblvd_option_id', array( $this, 'option_id' ), 15 );
 
 		// General mutators
 		add_action( 'after_setup_theme', array( $this, 'set_wpml_option_id' ) );
