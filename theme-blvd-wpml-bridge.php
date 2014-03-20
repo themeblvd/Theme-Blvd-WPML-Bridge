@@ -10,10 +10,10 @@ License: GPL2
 */
 
 /*
-Copyright 2012 JASON BOBICH
+Copyright 2014 JASON BOBICH
 
 This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License, version 2, as 
+it under the terms of the GNU General Public License, version 2, as
 published by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful,
@@ -30,7 +30,7 @@ define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '2.0.1' );
 define( 'TB_WPML_BRIDGE_PLUGIN_DIR', dirname( __FILE__ ) );
 define( 'TB_WPML_BRIDGE_PLUGIN_URI', plugins_url( '' , __FILE__ ) );
 
-/** 
+/**
  * Initialize plugin.
  *
  * @since 2.0.0
@@ -50,7 +50,7 @@ function themeblvd_wpml_init() {
 }
 add_action('plugins_loaded', 'themeblvd_wpml_init');
 
-/** 
+/**
  * Theme Blvd WPML
  *
  * @since 2.0.0
@@ -69,7 +69,7 @@ class Theme_Blvd_WPML {
 	private static $instance = null;
 
 	/**
-	 * Original theme option ID before any mods 
+	 * Original theme option ID before any mods
 	 * by our plugin.
 	 *
 	 * @since 2.3.0
@@ -77,7 +77,7 @@ class Theme_Blvd_WPML {
 	private $theme_option_id;
 
 	/**
-	 * The options ID for the WPML settings page. 
+	 * The options ID for the WPML settings page.
 	 * (NOT theme options)
 	 *
 	 * @since 2.3.0
@@ -108,10 +108,11 @@ class Theme_Blvd_WPML {
      * @return Theme_Blvd_WPML A single instance of this class.
      */
 	public static function get_instance() {
-		
-		if( self::$instance == null )
+
+		if ( self::$instance == null ) {
             self::$instance = new self;
-        
+        }
+
         return self::$instance;
 	}
 
@@ -121,10 +122,11 @@ class Theme_Blvd_WPML {
 	 * @since 2.3.0
 	 */
 	private function __construct() {
-		
+
 		// If WPML isn't running, get out of here.
-		if( ! defined( 'ICL_PLUGIN_PATH' ) )
+		if ( ! defined( 'ICL_PLUGIN_PATH' ) ) {
 			return;
+		}
 
 		// General Filters
 		add_filter( 'themeblvd_option_id', array( $this, 'option_id' ), 15 );
@@ -145,7 +147,7 @@ class Theme_Blvd_WPML {
 	/*--------------------------------------------*/
 
 	/**
-	 * Get original theme options ID before any mods 
+	 * Get original theme options ID before any mods
 	 * by our plugin.
 	 *
 	 * @since 2.0.0
@@ -174,15 +176,16 @@ class Theme_Blvd_WPML {
 	 */
 	public function option_id( $current ) {
 
-		if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) )
+		if ( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) ) {
 			return $current;
+		}
 
 		$this->theme_option_id = $current; // Store original
 		$option_id = $current;
 
 		// Only continue if WPML is running and the
 		// current language constant has been defined.
-		if( defined( 'ICL_LANGUAGE_CODE' ) ) {
+		if ( defined( 'ICL_LANGUAGE_CODE' ) ) {
 
 			// Current language
 			$current_lang = ICL_LANGUAGE_CODE;
@@ -190,12 +193,13 @@ class Theme_Blvd_WPML {
 			// Set default language
 			$default_lang = 'en'; // backup
 			$wpml_options = get_option( 'icl_sitepress_settings' );
-			if( isset( $wpml_options['default_language'] ) ) 
+			if ( isset( $wpml_options['default_language'] ) ) {
 				$default_lang = $wpml_options['default_language'];
+			}
 
-			// Adjust theme settings to match language if 
+			// Adjust theme settings to match language if
 			// it's different than the default language.
-			if( $current_lang != $default_lang && $current_lang != 'all' ) {
+			if ( $current_lang != $default_lang && $current_lang != 'all' ) {
 				$option_id = $option_id.'_'.$current_lang;
 			}
 
@@ -216,23 +220,25 @@ class Theme_Blvd_WPML {
 	public function frontend_init() {
 
 		// For Theme Blvd framework v2.3+ only.
-		if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) )
+		if ( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) ) {
 			return;
+		}
 
 		// Only swap breadcrumbs if user has "WPML CMS Nav" add-on installed.
-		if( class_exists( 'WPML_CMS_Navigation' ) && apply_filters( 'tb_wpml_breadcrumbs_replace', true ) ) {
+		if ( class_exists( 'WPML_CMS_Navigation' ) && apply_filters( 'tb_wpml_breadcrumbs_replace', true ) ) {
 			remove_action( 'themeblvd_breadcrumbs', 'themeblvd_breadcrumbs_default' );
 			add_action( 'themeblvd_breadcrumbs', 'tb_wpml_breadcrumbs' );
 		}
-		
+
 		// Theme Locations
 		$locations = $this->get_wpml_locations();
 		$settings = get_option( $this->wpml_option_id );
-		
-		if( $locations ) {
-			foreach( $locations as $id => $location ) {
-				if( isset( $settings[$id] ) && $settings[$id] == 'true' )
+
+		if ( $locations ) {
+			foreach ( $locations as $id => $location ) {
+				if ( isset( $settings[$id] ) && $settings[$id] == 'true' ) {
 					add_action( $location['action'], 'tb_wpml_flaglist' );
+				}
 			}
 		}
 
@@ -250,22 +256,24 @@ class Theme_Blvd_WPML {
 	public function admin_init() {
 
 		// Admin only.
-		if( ! is_admin() )
+		if ( ! is_admin() ) {
 			return;
+		}
 
 		// For Theme Blvd framework v2.3+ only.
-		if( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) )
+		if ( ! defined( 'TB_FRAMEWORK_VERSION' ) || version_compare( TB_FRAMEWORK_VERSION, '2.3.0', '<' ) ) {
 			return;
+		}
 
-		// Filter in theme Options menu slug to not use 
+		// Filter in theme Options menu slug to not use
 		// language extension.
 		add_filter( 'themeblvd_theme_options_args', array( $this, 'options_args' ) );
 
-		// Add functionality for "Match Default Language" button 
+		// Add functionality for "Match Default Language" button
 		// on Theme Options page.
 		add_action( 'admin_init', array( $this, 'options_match' ) );
 
-		// Add header to theme options page to change languages 
+		// Add header to theme options page to change languages
 		// and any needed assets.
 		add_action( 'themeblvd_admin_module_header', array( $this, 'options_header' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'options_styles' ) );
@@ -291,8 +299,9 @@ class Theme_Blvd_WPML {
 		$current = get_current_screen();
 		$base = sprintf( 'appearance_page_%s', $this->theme_option_id );
 
-		if( $current->base == $base )
+		if ( $current->base == $base ) {
 			return true;
+		}
 
 		return false;
 	}
@@ -303,21 +312,22 @@ class Theme_Blvd_WPML {
 	 * @since 2.0.0
 	 */
 	public function options_args( $args ) {
-		
-		if( ! defined('ICL_LANGUAGE_CODE') )
+
+		if ( ! defined('ICL_LANGUAGE_CODE') ) {
 			return;
+		}
 
 		// Options form action
 		$args['form_action'] = sprintf( 'options.php?lang=%s', ICL_LANGUAGE_CODE );
 
 		// Menu slug
 		$args['menu_slug'] = $this->theme_option_id; // Original stored options ID before our mods
-		
+
 		return $args;
 	}
 
 	/**
-	 * Add to sanitization of options page for 
+	 * Add to sanitization of options page for
 	 * "Match Default Language" button.
 	 *
 	 * @since 2.0.0
@@ -326,16 +336,17 @@ class Theme_Blvd_WPML {
 	 */
 	public function options_match() {
 
-		if( ! isset( $_POST['tb_wpml_match'] ) )
+		if ( ! isset( $_POST['tb_wpml_match'] ) ) {
 			return;
+		}
 
 		$options_id = themeblvd_get_option_name();
 		$settings = get_option( $this->theme_option_id );
-		
-		// Update options in datatbase to match defualt 
+
+		// Update options in datatbase to match defualt
 		// language's current options.
 		update_option( $options_id, $settings );
-		
+
 		// Add success message
 		add_settings_error( $options_id, 'save_options', __( 'Options matched.', 'tb_wpml' ), 'updated fade' );
 
@@ -347,7 +358,7 @@ class Theme_Blvd_WPML {
 	 * @since 2.0.0
 	 */
 	public function options_styles() {
-		if( $this->is_options_page() ) {
+		if ( $this->is_options_page() ) {
 			wp_register_style( 'tb_wpml_options_styles', TB_WPML_BRIDGE_PLUGIN_URI . '/assets/css/options.css', false, '1.0' );
 			wp_enqueue_style( 'tb_wpml_options_styles' );
 		}
@@ -359,17 +370,19 @@ class Theme_Blvd_WPML {
 	 * @since 2.0.0
 	 */
 	public function options_header() {
-		
-		if( ! $this->is_options_page() )
+
+		if ( ! $this->is_options_page() ) {
 			return;
+		}
 
 		global $sitepress;
 
 		// Set default language
 		$default_lang = 'en'; // backup
 		$wpml_options = get_option( 'icl_sitepress_settings' );
-		if( isset( $wpml_options['default_language'] ) ) 
+		if ( isset( $wpml_options['default_language'] ) ) {
 			$default_lang = $wpml_options['default_language'];
+		}
 
 		// Get all languages
 		$core_langs = $sitepress->get_active_languages(true);
@@ -378,18 +391,19 @@ class Theme_Blvd_WPML {
 		$langs = array();
 		$langs[$default_lang] = $core_langs[$default_lang];
 		unset( $core_langs[$default_lang] );
-		foreach( $core_langs as $key => $value ) {
+		foreach ( $core_langs as $key => $value ) {
 			$langs[$key] = $value;
 		}
-		
+
 		// Set current language
 		$current_lang = ICL_LANGUAGE_CODE;
-		if( $current_lang == 'all' )
+		if ( $current_lang == 'all' ) {
 			$current_lang = $default_lang;
-		
+		}
+
 		// Current Flag
 		$current_flag = $sitepress->get_flag( $current_lang );
-        if( $current_flag->from_template ){
+        if ( $current_flag->from_template ){
             $wp_upload_dir = wp_upload_dir();
             $current_flag_url = $wp_upload_dir['baseurl'].'/flags/'.$current_flag->flag;
         } else {
@@ -403,10 +417,10 @@ class Theme_Blvd_WPML {
 			</h3>
 			<span class="tb-wpml-logo">Theme Blvd WPML Bridge</span>
 			<div class="tb-wpml-nav">
-				<?php if( $langs ) : ?>
+				<?php if ( $langs ) : ?>
 					<ul>
-						<?php foreach( $langs as $key => $lang ) : ?>
-							<li<?php if( $key == $current_lang ) echo ' class="active"'; ?>>
+						<?php foreach ( $langs as $key => $lang ) : ?>
+							<li<?php if ( $key == $current_lang ) echo ' class="active"'; ?>>
 								<a href="?page=<?php echo $this->theme_option_id; ?>&lang=<?php echo $key ?>">
 									<?php echo $lang['display_name']; ?>
 								</a>
@@ -414,7 +428,7 @@ class Theme_Blvd_WPML {
 						<?php endforeach; ?>
 					</ul>
 				<?php endif; ?>
-				<?php if( $current_lang != $default_lang ) : ?>
+				<?php if ( $current_lang != $default_lang ) : ?>
 					<form action="" method="post">
 						<input type="submit" class="reset-button button-secondary" name="tb_wpml_match" value="<?php esc_attr_e( 'Match Default Language', 'tb_wpml' ); ?>" onclick="return confirm( '<?php print esc_js( __( 'Click OK to match options. You will lose your current settings for this language and they will be matched to whatever you\'ve set for your default language.', 'tb_wpml' ) ); ?>' );" />
 					</form>
@@ -422,7 +436,7 @@ class Theme_Blvd_WPML {
 			</div><!-- .tb-wpml-nav (end) -->
 		</div><!-- .tb-wpml-header (end) -->
 		<?php
-	
+
 	}
 
 	/*--------------------------------------------*/
@@ -430,7 +444,7 @@ class Theme_Blvd_WPML {
 	/*--------------------------------------------*/
 
 	/**
-	 * Set options ID for the WPML settings page. 
+	 * Set options ID for the WPML settings page.
 	 * (NOT theme options)
 	 *
 	 * @since 2.0.0
@@ -441,7 +455,7 @@ class Theme_Blvd_WPML {
 	}
 
 	/**
-	 * Setup WPML Settings page. 
+	 * Setup WPML Settings page.
 	 * WP Admin > WPML > Theme Name
 	 *
 	 * @since 2.0.0
@@ -499,20 +513,20 @@ class Theme_Blvd_WPML {
 	 * @return array $options
 	 */
 	public function get_wpml_options() {
-		
+
 		// Start options and location section
 		$options = array(
-			'start_locations' => array( 
-				'name' => __( 'Theme Locations', 'tb_wpml' ),		
+			'start_locations' => array(
+				'name' => __( 'Theme Locations', 'tb_wpml' ),
 				'type' => 'section_start',
 				'desc' => __( 'In this section, you can select where you\'d like the Theme Blvd WPML Bridge\'s flaglists to display. You can see below all of your current theme\'s supported locations.<br><br>Note: This is completely separate from WPML\'s <a href="admin.php?page=sitepress-multilingual-cms/menu/languages.php#lang-sec-3">Language switcher options</a>.', 'tb_wpml' )
 			)
 		);
-		
+
 		// Setup dynamic options based on theme locations
 		$theme_locations = $this->get_wpml_locations();
-		if( $theme_locations ) {
-			foreach( $theme_locations as $id => $location) {
+		if ( $theme_locations ) {
+			foreach ( $theme_locations as $id => $location ) {
 				$options[$id] = array(
 					'name' 		=> $location['name'],
 					'desc'		=> $location['desc'],
@@ -526,12 +540,12 @@ class Theme_Blvd_WPML {
 				);
 			}
 		}
-		
+
 		// End locations section
-		$options['end_locations'] = array( 	
+		$options['end_locations'] = array(
 			'type' => 'section_end'
 		);
-		
+
 		// Return with filters applied
 		return apply_filters( 'tb_wpml_options', $options );
 	}
