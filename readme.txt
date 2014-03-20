@@ -43,7 +43,8 @@ The following articles cover general topics and best practices in using WPML spe
 
 = 2.0.1 =
 
-* Filtering of framework options ID adjusted to allow prior filtering before WPML Bridge.
+* Fixed some recent, admin compatibility issues with WPML.
+* Fail-safe added for those filtering theme options ID from child theme.
 
 = 2.0.0 =
 

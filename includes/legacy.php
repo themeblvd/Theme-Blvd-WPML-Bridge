@@ -782,7 +782,7 @@ function tb_wpml_admin_module_header( $page ) {
 		<div class="tb-wpml-header">
 			<h3>
 				<span class="tb-wpml-flag"><img src="<?php echo $current_flag_url; ?>" /></span>
-				<?php printf( __( '%1$s Theme Options', 'tb_wpml' ), $langs[$current_lang]['translated_name'] ); ?>
+				<?php printf( __( '%1$s Theme Options', 'tb_wpml' ), $langs[$current_lang]['native_name'] ); ?>
 			</h3>
 			<span class="tb-wpml-logo">Theme Blvd WPML Bridge</span>
 			<div class="tb-wpml-nav">
