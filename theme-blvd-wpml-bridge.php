@@ -3,7 +3,7 @@
 Plugin Name: Theme Blvd WPML Bridge
 Plugin URI: http://wpml.themeblvd.com
 Description: This plugin creates a bridge between the Theme Blvd framework and the WPML plugin.
-Version: 2.0.1
+Version: 2.0.2
 Author: Jason Bobich
 Author URI: http://jasonbobich.com
 License: GPL2
@@ -26,7 +26,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '2.0.1' );
+define( 'TB_WPML_BRIDGE_PLUGIN_VERSION', '2.0.2' );
 define( 'TB_WPML_BRIDGE_PLUGIN_DIR', dirname( __FILE__ ) );
 define( 'TB_WPML_BRIDGE_PLUGIN_URI', plugins_url( '' , __FILE__ ) );
 
@@ -231,15 +231,19 @@ class Theme_Blvd_WPML {
 		}
 
 		// Theme Locations
-		$locations = $this->get_wpml_locations();
-		$settings = get_option( $this->wpml_option_id );
+		if ( version_compare( TB_FRAMEWORK_VERSION, '2.5.0', '<' ) ) { // framework 2.5+ has a built-in system for this
 
-		if ( $locations ) {
-			foreach ( $locations as $id => $location ) {
-				if ( isset( $settings[$id] ) && $settings[$id] == 'true' ) {
-					add_action( $location['action'], 'tb_wpml_flaglist' );
+			$locations = $this->get_wpml_locations();
+			$settings = get_option( $this->wpml_option_id );
+
+			if ( $locations ) {
+				foreach ( $locations as $id => $location ) {
+					if ( isset( $settings[$id] ) && $settings[$id] == 'true' ) {
+						add_action( $location['action'], 'tb_wpml_flaglist' );
+					}
 				}
 			}
+
 		}
 
 	}
@@ -279,7 +283,9 @@ class Theme_Blvd_WPML {
 		add_action( 'admin_enqueue_scripts', array( $this, 'options_styles' ) );
 
 		// WPML settings page
-		add_action( 'init', array( $this, 'wpml_options_page' ) );
+		if ( version_compare( TB_FRAMEWORK_VERSION, '2.5.0', '<' ) ) { // framework 2.5+ has a built-in system for this
+			add_action( 'init', array( $this, 'wpml_options_page' ) );
+		}
 
 	}
 

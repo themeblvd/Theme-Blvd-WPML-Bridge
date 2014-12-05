@@ -43,6 +43,8 @@ The following articles cover general topics and best practices in using WPML spe
 
 = 2.0.2 =
 
+* Minor fixes for upcoming Theme Blvd Framework 2.5+ themes.
+
 = 2.0.1 =
 
 * Minor style changes for Theme Options header to match WP 3.8+ admin.
